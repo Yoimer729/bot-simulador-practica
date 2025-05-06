@@ -26,9 +26,9 @@ def obtener_datos():
     url = f"https://api.kucoin.com/api/v1/market/candles?type={INTERVAL}&symbol={PAIR}&limit={LIMITE}"
     response = requests.get(url)
     respuesta = response.json()
-datos = respuesta.get('datos') or respuesta.get('data') or respuesta
+    datos = respuesta.get('data') or respuesta.get('datos') or respuesta
 
-    df = pd.DataFrame(data, columns=["timestamp", "open", "close", "high", "low", "volume", "turnover"])
+    df = pd.DataFrame(datos, columns=["timestamp", "open", "close", "high", "low", "volume", "turnover"])
     df = df.iloc[::-1].copy()
     df["close"] = df["close"].astype(float)
     df["volume"] = df["volume"].astype(float)
@@ -36,7 +36,6 @@ datos = respuesta.get('datos') or respuesta.get('data') or respuesta
     return df
 
 # Indicadores técnicos
-
 def calcular_ema(df, periodo):
     return df['close'].ewm(span=periodo, adjust=False).mean()
 
@@ -51,7 +50,6 @@ def calcular_rsi(df, periodo=14):
     return rsi
 
 # Simular operación
-
 def simular_operacion(precio_entrada):
     global CAPITAL
     monto_operacion = CAPITAL * 0.3
@@ -75,7 +73,6 @@ def simular_operacion(precio_entrada):
     return resultado
 
 # Evaluar condiciones y simular entrada
-
 def evaluar_estrategia(df):
     global CAPITAL
     df['ema9'] = calcular_ema(df, 9)
@@ -99,7 +96,6 @@ def evaluar_estrategia(df):
         print(f"\n✅ COMPRA SIMULADA: {operacion}\nCapital actual: {round(CAPITAL, 2)} COP")
 
 # Bucle principal
-
 def ejecutar_simulacion():
     print("\n🧠 Iniciando simulador de bot de trading... (Modo Práctica)")
     for _ in range(3):  # Ejecutamos 3 simulaciones seguidas por ejemplo
