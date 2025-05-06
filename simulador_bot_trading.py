@@ -35,7 +35,7 @@ def obtener_datos():
             df = df.iloc[::-1].copy()
             df["close"] = df["close"].astype(float)
             df["volume"] = df["volume"].astype(float)
-            df["timestamp"] = pd.to_datetime(df["timestamp"], unit='ms')
+            df["timestamp"] = pd.to_datetime(df["timestamp"].astype(int), unit='ms')
             return df
     
     print("❌ Error al obtener datos desde la API o respuesta vacía.")
