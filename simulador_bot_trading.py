@@ -25,7 +25,9 @@ STOP_LOSS = -0.015  # -1.5%
 def obtener_datos():
     url = f"https://api.kucoin.com/api/v1/market/candles?type={INTERVAL}&symbol={PAIR}&limit={LIMITE}"
     response = requests.get(url)
-    data = response.json()['data']
+    respuesta = response.json()
+datos = respuesta.get('datos') or respuesta.get('data') or respuesta
+
     df = pd.DataFrame(data, columns=["timestamp", "open", "close", "high", "low", "volume", "turnover"])
     df = df.iloc[::-1].copy()
     df["close"] = df["close"].astype(float)
