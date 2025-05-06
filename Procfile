@@ -1,0 +1,1 @@
+worker: python simulador_bot_trading.py
