@@ -16,7 +16,7 @@ HISTORIAL = []
 
 # Configuración de estrategia
 PAIR = "BTC-USDT"
-INTERVAL = "5m"
+INTERVAL = "5min"
 LIMITE = 200
 TAKE_PROFIT = 0.03  # 3%
 STOP_LOSS = -0.015  # -1.5%
@@ -25,15 +25,21 @@ STOP_LOSS = -0.015  # -1.5%
 def obtener_datos():
     url = f"https://api.kucoin.com/api/v1/market/candles?type={INTERVAL}&symbol={PAIR}&limit={LIMITE}"
     response = requests.get(url)
-    respuesta = response.json()
-    datos = respuesta.get('data') or respuesta.get('datos') or respuesta
-
-    df = pd.DataFrame(datos, columns=["timestamp", "open", "close", "high", "low", "volume", "turnover"])
-    df = df.iloc[::-1].copy()
-    df["close"] = df["close"].astype(float)
-    df["volume"] = df["volume"].astype(float)
-    df["timestamp"] = pd.to_datetime(df["timestamp"], unit='ms')
-    return df
+    
+    if response.status_code == 200:
+        respuesta = response.json()
+        datos = respuesta.get('data') or respuesta.get('datos') or []
+        
+        if datos and isinstance(datos, list):
+            df = pd.DataFrame(datos, columns=["timestamp", "open", "close", "high", "low", "volume", "turnover"])
+            df = df.iloc[::-1].copy()
+            df["close"] = df["close"].astype(float)
+            df["volume"] = df["volume"].astype(float)
+            df["timestamp"] = pd.to_datetime(df["timestamp"], unit='ms')
+            return df
+    
+    print("❌ Error al obtener datos desde la API o respuesta vacía.")
+    return pd.DataFrame()
 
 # Indicadores técnicos
 def calcular_ema(df, periodo):
@@ -75,6 +81,11 @@ def simular_operacion(precio_entrada):
 # Evaluar condiciones y simular entrada
 def evaluar_estrategia(df):
     global CAPITAL
+
+    if df.empty or len(df) < 2:
+        print("⚠️ No hay suficientes datos para evaluar la estrategia.")
+        return
+
     df['ema9'] = calcular_ema(df, 9)
     df['ema21'] = calcular_ema(df, 21)
     df['ema200'] = calcular_ema(df, 200)
@@ -83,7 +94,6 @@ def evaluar_estrategia(df):
     ultima = df.iloc[-1]
     anterior = df.iloc[-2]
 
-    # Condiciones para entrada
     if (
         anterior['ema9'] < anterior['ema21'] and
         ultima['ema9'] > ultima['ema21'] and
@@ -97,11 +107,11 @@ def evaluar_estrategia(df):
 
 # Bucle principal
 def ejecutar_simulacion():
-    print("\n🧠 Iniciando simulador de bot de trading... (Modo Práctica)")
-    for _ in range(3):  # Ejecutamos 3 simulaciones seguidas por ejemplo
+    print("\n🧠 Iniciando simulador de bot de trading... (modo práctica)")
+    for _ in range(3):  # Puedes aumentar si lo deseas
         df = obtener_datos()
         evaluar_estrategia(df)
-        time.sleep(5)  # Esperar 5 segundos entre cada evaluación
+        time.sleep(5)
 
     print("\n📊 Historial de operaciones simuladas:")
     for op in HISTORIAL:
