@@ -40,7 +40,7 @@ def simular_trade(precio_entrada):
 
 def bot_loop():
     global CAPITAL
-    for i in range(100):  # número de simulaciones (ajustable)
+    for i in range(100):  # puedes ajustar la cantidad de simulaciones
         df = obtener_velas_simuladas()
         if evaluar_entrada(df):
             precio_entrada = df["close"].iloc[-1]
@@ -57,17 +57,18 @@ def bot_loop():
             print(f"[{datetime.now()}] {resultado}: entrada {precio_entrada:.2f} → salida {precio_salida:.2f} | Ganancia: {ganancia_neta:.2f} | Capital: {CAPITAL:.2f}")
         else:
             print(f"[{datetime.now()}] No hay señal válida.")
-        time.sleep(5)  # Espera corta solo para simulación
-
-# Lanzar el bot en un hilo separado
-@app.before_first_request
-def iniciar_bot():
-    thread = threading.Thread(target=bot_loop)
-    thread.start()
+        time.sleep(5)
 
 @app.route('/')
 def home():
     return f"✅ Bot de simulación activo - Capital actual: {CAPITAL:.2f} COP"
+
+# Inicia el bot apenas el servidor arranca
+def start_bot_background():
+    thread = threading.Thread(target=bot_loop)
+    thread.start()
+
+start_bot_background()
 
 # Ejecutar la app web
 if __name__ == '__main__':
