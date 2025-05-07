@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
@@ -14,6 +15,11 @@ TASA_USDT = 4000
 COMISION = 0.002
 LIMITE = 100
 historial = []
+CSV_PATH = "resultados.csv"
+
+# Si el CSV no existe, crear el archivo con encabezados
+if not os.path.exists(CSV_PATH):
+    pd.DataFrame(columns=["Fecha", "Entrada", "Salida", "Resultado", "Ganancia_COP", "Capital_Actual"]).to_csv(CSV_PATH, index=False)
 
 def obtener_velas_simuladas():
     precios = np.linspace(100, 110, LIMITE) + np.random.normal(0, 0.5, LIMITE)
@@ -40,7 +46,7 @@ def simular_trade(precio_entrada):
 
 def bot_loop():
     global CAPITAL
-    for i in range(100):  # puedes ajustar la cantidad de simulaciones
+    for i in range(100):  # número de operaciones
         df = obtener_velas_simuladas()
         if evaluar_entrada(df):
             precio_entrada = df["close"].iloc[-1]
@@ -55,21 +61,32 @@ def bot_loop():
                 "capital_actual": round(CAPITAL, 2)
             })
             print(f"[{datetime.now()}] {resultado}: entrada {precio_entrada:.2f} → salida {precio_salida:.2f} | Ganancia: {ganancia_neta:.2f} | Capital: {CAPITAL:.2f}")
+            
+            # Guardar en CSV
+            nueva_fila = pd.DataFrame([{
+                "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Entrada": round(precio_entrada, 2),
+                "Salida": round(precio_salida, 2),
+                "Resultado": resultado,
+                "Ganancia_COP": round(ganancia_neta, 2),
+                "Capital_Actual": round(CAPITAL, 2)
+            }])
+            nueva_fila.to_csv(CSV_PATH, mode='a', index=False, header=False)
         else:
             print(f"[{datetime.now()}] No hay señal válida.")
         time.sleep(5)
 
 @app.route('/')
 def home():
-    return f"✅ Bot de simulación activo - Capital actual: {CAPITAL:.2f} COP"
+    total_op = len(historial)
+    ganancia_total = sum([x["ganancia_cop"] for x in historial]) if historial else 0
+    return f"✅ Bot de simulación activo<br>Capital actual: {CAPITAL:.2f} COP<br>Operaciones: {total_op}<br>Ganancia neta: {ganancia_total:.2f} COP"
 
-# Inicia el bot apenas el servidor arranca
 def start_bot_background():
     thread = threading.Thread(target=bot_loop)
     thread.start()
 
 start_bot_background()
 
-# Ejecutar la app web
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
