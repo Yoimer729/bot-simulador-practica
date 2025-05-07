@@ -1,1 +1,1 @@
-worker: python simulador_bot_trading.py
+worker: python main.py
